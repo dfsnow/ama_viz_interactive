@@ -1,32 +1,55 @@
-p {
-  margin-bottom: 0px;
-  margin-top: 10px;
+body {
+    height: 100%;
+    width: 98%;
 }
 
-.title {
-    font: 40px sans-serif;
+h1 {
+    font: 34px sans-serif;
     color: #252525;
-    padding-left: 50px;
-    line-spacing: 
+    margin-bottom: 0px;
+    margin-top: 10px;
 }
 
-.subtitle {
-    font: 30px sans-serif;
+h2 {
+    font: 26px sans-serif;
     color: #737373;
-    padding-left: 50px;
+    margin-bottom: 0px;
+    margin-top: 4px;
 }
 
-div.tooltip {	
-    position: absolute;			
-    text-align: left;			
-    min-width: 40pt;
-    max-width: 200pt;
+#main-container {
+    display: flex;
+    height: 100vh;
+}
+
+#map-column {
+    flex: 0 0 65%;
+}
+
+#info-column {
+    flex: 1;
+}
+
+div.tooltip {
+    margin-top: 20px;
     height: auto;					
-    padding: 8px;				
-    font: 18px sans-serif;		
-    color: #252525;
+    font: 24px sans-serif;		
+    color: #737373;
     background: transparent;	
-    border: 0px;		
-    border-radius: 6px;			
     pointer-events: none;			
+}
+
+.overlay {
+    position: relative;
+    z-index: 20;
+}
+
+.contour {
+    position: relative;
+    z-index: 10;
+}
+
+.state {
+    position: relative;
+    z-index: 0;
 }
