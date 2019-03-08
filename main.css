@@ -1,0 +1,32 @@
+p {
+  margin-bottom: 0px;
+  margin-top: 10px;
+}
+
+.title {
+    font: 40px sans-serif;
+    color: #252525;
+    padding-left: 50px;
+    line-spacing: 
+}
+
+.subtitle {
+    font: 30px sans-serif;
+    color: #737373;
+    padding-left: 50px;
+}
+
+div.tooltip {	
+    position: absolute;			
+    text-align: left;			
+    min-width: 40pt;
+    max-width: 200pt;
+    height: auto;					
+    padding: 8px;				
+    font: 18px sans-serif;		
+    color: #252525;
+    background: transparent;	
+    border: 0px;		
+    border-radius: 6px;			
+    pointer-events: none;			
+}

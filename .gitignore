@@ -1,0 +1,6 @@
+*.Rproj
+.Rproj.user/
+.Rhistory
+.Rproj.user
+.RData
+data/tract_centroids_raw.csv
