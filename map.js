@@ -102,7 +102,7 @@ var mainMap = function(data) {
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     // Creating a temporary div to put the school name into
-    var div = d3.select("#school-list")
+    var div = d3.select("#map-tooltip")
         .append("div")
         .attr("class", "tooltip")
         .style("opacity", 1);
@@ -187,6 +187,17 @@ var mainMap = function(data) {
             .attr('class', 'contour')
             .attr("fill", function(d) { return contourColor(d.value); })
             .attr("d", d3.geoPath());
+
+        svg.selectAll("overlay").remove();
+
+        svg.append("rect")
+            .attr("class", "overlay")
+            .attr("width", width)
+            .attr("height", height)
+            .style("fill", "black")
+            .style("opacity", 0)
+            .on("mousemove", mouseMoveHandler)
+            .on("click", mouseClickHandler);
     };
 
 
@@ -197,7 +208,7 @@ var mainMap = function(data) {
         .attr("cx", function(d) { return x(d.lon); })
         .attr("cy", function(d) { return y(d.lat); })
         .attr("r", 4)
-        .attr("fill", "slategrey")
+        .attr("fill", "#6386b7")
 
     // Draw an arbitrary highlight circle to move to nearest school
     svg.append('circle')
@@ -252,6 +263,7 @@ var mainMap = function(data) {
                 drawContours(medSchoolSet);
                 medListHandler(medSchoolSet);
             });
+
     };
 
     var medValueChecker = function(school) {
@@ -317,22 +329,10 @@ var mainMap = function(data) {
 };
 
 
-
 // Suggestions from Alex
-// - add clear all button
-// - style seach bar
-// - add buttons to list
 // - Lasso brush selection
 // - Add note cueing to lasso
-// - Select presets (coasts, midwest, rural, DO)
-
-//input tag in html, attribute onclick,
-
 
 // TODO
-// Make points permanent on click
-// Add school statistics to sidebar
 // transitions?
 // fix Hawaii
-// add search
-//
