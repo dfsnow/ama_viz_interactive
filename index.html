@@ -9,12 +9,12 @@
 <body>
     <section id="main-container">
         <div id="map-column">
-            <svg class="map-container"></svg>
+            <svg id="map-container"></svg>
         </div>
         <div id="info-column">
             <h1>Med School Graduates Usually Practice Near Their School</h1>
             <div id="info-container">
-                <form name="medSearchForm" onSubmit="return medSearchHandler()">
+                <form name="medSearchForm" onSubmit="return mainMap.medSearchHandler">
                     <input list="medDataList" id="medSearchName" placeholder="Search...">
                     <datalist id="medDataList"></datalist>
                 </form>
