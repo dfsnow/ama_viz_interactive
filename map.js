@@ -17,9 +17,8 @@ Promise.all(files.map(url => fetch(url)
 // Initialize a set to hold all selected medical schools
 var medSchoolSet = new Set();
 
-
 // Main map drawing function
-var mainMap = function(data, set = null) {
+var mainMap = function(data) {
     const [stateShapes, schoolsInfo, schoolsData] = data;
 
     // Setting up all main global elements
@@ -93,6 +92,7 @@ var mainMap = function(data, set = null) {
         }
     });
 
+    var medSchoolNames = schoolsDataTrans.map(d => d.med_school_name)
 
     // Creating an svg and appending a map + school locations
     var svg = d3.select('#map-container')
@@ -151,6 +151,7 @@ var mainMap = function(data, set = null) {
             medSchoolSet.add(point);
         };
 
+        medListHandler(medSchoolSet);
         drawContours(medSchoolSet);
     };
 
@@ -218,26 +219,41 @@ var mainMap = function(data, set = null) {
         .on("mousemove", mouseMoveHandler)
         .on("click", mouseClickHandler);
 
+    // Create a searchbar in the information div
+    d3.select("#medSearchForm").on("submit", function() {
+        medSearchHandler();
+        document.getElementById('medSearchForm').reset()
+    });
+
     // Creating a handler for the search box
-    this.medSearchHandler = function() {
-        let searchValue = document.getElementById("medSearchName").value
+    var medSearchHandler = function() {
+        // Get the search value from the box
+        let searchValue = document.getElementById("medSearchInput").value
+        medValueChecker(searchValue);
+    };
 
-        if (medSchoolSet.has(searchValue)) {
-            medSchoolSet.delete(searchValue);
-        } else {
-            medSchoolSet.add(searchValue);
-        };
-
-
-        let temp = Array.from(medSchoolSet)
-
+    var medListHandler = function(set) {
+        listValues = Array.from(set);
         d3.select("#info-container").select("ul").append("li");
         d3.select("#info-container").selectAll("li")
-            .data(temp)
-            .text(function(d,i) { return d; })
+            .data(listValues)
+            .join('text')
+            .text(function(d) { return d; });
+    };
 
-        return false;
-
+    var medValueChecker = function(school) {
+        // If value is in schools set delete, if not, append to set
+        if (medSchoolSet.has(school)) {
+            medSchoolSet.delete(school);
+            drawContours(medSchoolSet);
+            medListHandler(medSchoolSet);
+        } else {
+            if (medSchoolNames.includes(school)) {
+                medSchoolSet.add(school);
+                drawContours(medSchoolSet);
+                medListHandler(medSchoolSet);
+            };
+        };
     };
 
 };
