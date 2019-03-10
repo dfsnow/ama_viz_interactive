@@ -39,17 +39,3 @@ div.tooltip {
     pointer-events: none;			
 }
 
-.overlay {
-    position: relative;
-    z-index: 20;
-}
-
-.contour {
-    position: relative;
-    z-index: 10;
-}
-
-.state {
-    position: relative;
-    z-index: 0;
-}
