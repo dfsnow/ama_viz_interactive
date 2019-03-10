@@ -3,12 +3,6 @@ body {
     width: 98%;
 }
 
-h1 {
-    font: 34px sans-serif;
-    color: #252525;
-    margin-bottom: 0px;
-    margin-top: 10px;
-}
 
 h2 {
     font: 26px sans-serif;
@@ -24,10 +18,78 @@ h2 {
 
 #map-column {
     flex: 0 0 65%;
+    height: 80%;
 }
 
 #info-column {
+    margin-left: 10px;
     flex: 1;
+    height: 100%;
+}
+
+#info-column h1 {
+    font: 34px sans-serif;
+    color: #252525;
+    margin-bottom: 0px;
+    margin-top: 10px;
+}
+
+#info-column hr {
+    height: 1px;
+    background-color: #a0a0a0
+}
+
+#info-column ul {
+    display: block;
+    overflow: auto;
+    max-height: 60vh;
+    list-style: none;
+    list-style-position: outside;
+    padding-left: 0;
+}
+
+#info-column li {
+    margin: 10px 10px 0 10px;
+    font: 16px sans-serif;
+    padding: 4px;
+    border: 2px solid lightgrey;
+    border-radius: 10px;
+    text-indent: -2.8em;
+    padding-left: 2.5em;
+}
+
+#info-column li:before {
+    content: "\2715";
+    margin: 1em 1em;
+}
+
+#info-buttons input {
+    display: inline-block;
+    float: left;
+    margin-top: 16px;
+    width: calc(100% - 90px);
+    padding: 6px;
+    border: 2px solid #737373;
+}
+
+#info-buttons button {
+    float: right;
+    margin-top: 16px;
+    padding: 6px;
+    border: 2px solid #737373;
+    font-weight: bold;
+}
+
+#info-schools-list {
+    margin-top: 50px;
+}
+
+#info-schools-subsets button {
+    margin-top: 8px;
+    padding: 6px 10px 6px 10px;
+    border: 2px solid #737373;
+    font: 18px sans-serif;
+    color: #737373;
 }
 
 div.tooltip {

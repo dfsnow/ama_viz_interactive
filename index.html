@@ -13,12 +13,21 @@
         </div>
         <div id="info-column">
             <h1>Med School Graduates Usually Practice Near Their School</h1>
-            <div id="info-container">
+            <div id="info-buttons">
                 <form id="medSearchForm" autocomplete="on" onSubmit="return false;">
-                    <input id="medSearchInput" list="medDataList" autocomplete="on" placeholder="Search...">
+                    <input id="medSearchInput" list="medDataList" autocomplete="on" placeholder="Search for a medical school...">
                     <datalist id="medDataList"></datalist>
                 </form>
-                 <ul></ul>
+                <button type="button" id="medClearAll">Clear All</button>
+            </div>
+            <div id="info-schools-list">
+                <ul></ul>
+            </div>
+            <hr>
+            <div id="info-schools-subsets">
+                <button type="button" class="medSetButton" id="medSetMostUrban">Most Urban Grads</button>
+                <button type="button" class="medSetButton" id="medSetMostRural">Most Rural Grads</button>
+                <button type="button" class="medSetButton" id="medSetTop10">Top 10</button>
             </div>
         </div>
     </section>

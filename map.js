@@ -25,7 +25,7 @@ var mainMap = function(data) {
     const mainDiv = document.getElementById("map-column");
 
     // Setting up margins, width, and height
-    const margin = {top: 20, left: 20, right: 10, bottom: 10};
+    const margin = {top: 20, left: 20, right: 0, bottom: 0};
     const width = mainDiv.clientWidth - margin.left - margin.right;
     const height = mainDiv.clientHeight - margin.top - margin.bottom;
 
@@ -102,7 +102,7 @@ var mainMap = function(data) {
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     // Creating a temporary div to put the school name into
-    var div = d3.select("#info-container")
+    var div = d3.select("#school-list")
         .append("div")
         .attr("class", "tooltip")
         .style("opacity", 1);
@@ -225,20 +225,33 @@ var mainMap = function(data) {
         document.getElementById('medSearchForm').reset()
     });
 
+    d3.select("#medClearAll").on("click", function() {
+        medSchoolSet.clear();
+        drawContours(medSchoolSet);
+        medListHandler(medSchoolSet);
+    });
+
+
     // Creating a handler for the search box
     var medSearchHandler = function() {
-        // Get the search value from the box
         let searchValue = document.getElementById("medSearchInput").value
         medValueChecker(searchValue);
     };
 
     var medListHandler = function(set) {
         listValues = Array.from(set);
-        d3.select("#info-container").select("ul").append("li");
-        d3.select("#info-container").selectAll("li")
+        d3.select("#info-schools-list").select("ul").append("li");
+        d3.select("#info-schools-list").selectAll("li")
             .data(listValues)
             .join('text')
-            .text(function(d) { return d; });
+            .attr("class", "school")
+            .text(function(d) { return d; })
+            .style("cursor", "pointer")
+            .on("click", function(d) {
+                medSchoolSet.delete(d);
+                drawContours(medSchoolSet);
+                medListHandler(medSchoolSet);
+            });
     };
 
     var medValueChecker = function(school) {
@@ -256,14 +269,59 @@ var mainMap = function(data) {
         };
     };
 
+    d3.select("#medSetMostUrban").on("click", function() {
+        [   "University of California, Irvine School of Medicine",
+            "State University of New York Upstate Medical University",
+            "Albert Einstein College of Medicine",
+            "New York University School of Medicine",
+            "Stony Brook University School of Medicine"
+        ].forEach(function(d) {
+            medSchoolSet.add(d)
+            drawContours(medSchoolSet);
+            medListHandler(medSchoolSet);
+        });
+    });
+
+    d3.select("#medSetMostRural").on("click", function() {
+        [   "University of Mississippi School of Medicine",
+            "University of Arkansas for Medical Sciences/UAMS College of Medicine",
+            "West Virginia University School of Medicine",
+            "Louisiana State University School of Medicine in Shreveport",
+            "University of Iowa Roy J. and Lucille A. Carver College of Medicine"
+        ].forEach(function(d) {
+            medSchoolSet.add(d)
+            drawContours(medSchoolSet);
+            medListHandler(medSchoolSet);
+        });
+    });
+
+    d3.select("#medSetTop10").on("click", function() {
+        [   "Harvard Medical School",
+            "Johns Hopkins University School of Medicine",
+            "New York University School of Medicine",
+            "Stanford University School of Medicine",
+            "UCSF School of Medicine",
+            "Mayo Clinic College of Medicine",
+            "Perelman School of Medicine at the University of Pennsylvania",
+            "David Geffen School of Medicine at UCLA",
+            "Washington University School of Medicine",
+            "Duke University School of Medicine"
+        ].forEach(function(d) {
+            medSchoolSet.add(d)
+            drawContours(medSchoolSet);
+            medListHandler(medSchoolSet);
+        });
+    });
+
+
 };
 
 
 
 // Suggestions from Alex
-// - Searchable style dropdown, html box, populated from d3
-// - when click add box to list
-// - drag out selected boxes or deselect on click again
+// - add clear all button
+// - style seach bar
+// - add buttons to list
 // - Lasso brush selection
 // - Add note cueing to lasso
 // - Select presets (coasts, midwest, rural, DO)
