@@ -236,11 +236,13 @@ var mainMap = function(data) {
         document.getElementById('medSearchForm').reset()
     });
 
-    d3.select("#medClearAll").on("click", function() {
-        medSchoolSet.clear();
-        drawContours(medSchoolSet);
-        medListHandler(medSchoolSet);
-    });
+    d3.select("#medClearAll")
+        .style("cursor", "pointer")
+        .on("click", function() {
+            medSchoolSet.clear();
+            drawContours(medSchoolSet);
+            medListHandler(medSchoolSet);
+        });
 
 
     // Creating a handler for the search box
@@ -281,7 +283,9 @@ var mainMap = function(data) {
         };
     };
 
-    d3.select("#medSetMostUrban").on("click", function() {
+    d3.select("#medSetMostUrban")
+        .style("cursor", "pointer")
+        .on("click", function() {
         [   "University of California, Irvine School of Medicine",
             "State University of New York Upstate Medical University",
             "Albert Einstein College of Medicine",
@@ -294,7 +298,9 @@ var mainMap = function(data) {
         });
     });
 
-    d3.select("#medSetMostRural").on("click", function() {
+    d3.select("#medSetMostRural")
+        .style("cursor", "pointer")
+        .on("click", function() {
         [   "University of Mississippi School of Medicine",
             "University of Arkansas for Medical Sciences/UAMS College of Medicine",
             "West Virginia University School of Medicine",
@@ -307,7 +313,9 @@ var mainMap = function(data) {
         });
     });
 
-    d3.select("#medSetTop10").on("click", function() {
+    d3.select("#medSetTop10")
+        .style("cursor", "pointer")
+        .on("click", function() {
         [   "Harvard Medical School",
             "Johns Hopkins University School of Medicine",
             "New York University School of Medicine",

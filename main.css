@@ -85,6 +85,18 @@ body {
     color: #737373;
 }
 
+#medClearAll:hover {
+    background-color: lightgray;
+}
+
+.medSetButton:hover {
+    background-color: lightgray;
+}
+
+.school:hover {
+    background-color: lightgrey;
+}
+
 div.tooltip {
     margin-top: 20px;
     margin-left: 20px;
