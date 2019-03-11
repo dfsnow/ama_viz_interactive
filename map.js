@@ -129,8 +129,6 @@ var mainMap = function(data) {
         const [mx, my] = d3.mouse(this);
         const highlight_point = schoolsInfoTrans[delaunay.find(mx, my)];
 
-        d3.select(this).style("cursor", "pointer");
-
         div.html(highlight_point.med_school_name);
         svg.selectAll(".circle-highlight")
             .attr("class", "circle-highlight")
@@ -186,6 +184,7 @@ var mainMap = function(data) {
             .join("path")
             .attr('class', 'contour')
             .attr("fill", function(d) { return contourColor(d.value); })
+            .style("cursor", "pointer")
             .attr("d", d3.geoPath());
 
         svg.selectAll("overlay").remove();
@@ -196,6 +195,7 @@ var mainMap = function(data) {
             .attr("height", height)
             .style("fill", "black")
             .style("opacity", 0)
+            .style("cursor", "pointer")
             .on("mousemove", mouseMoveHandler)
             .on("click", mouseClickHandler);
     };
@@ -227,6 +227,7 @@ var mainMap = function(data) {
         .attr("height", height)
         .style("fill", "black")
         .style("opacity", 0)
+        .style("cursor", "pointer")
         .on("mousemove", mouseMoveHandler)
         .on("click", mouseClickHandler);
 
