@@ -1,5 +1,5 @@
 body {
-    height: 100vh;
+    height: 97vh;
     width: 98%;
 }
 
@@ -10,13 +10,33 @@ body {
 
 #map-column {
     flex: 0 0 65%;
-    height: 80%;
+    height: 90%;
 }
 
 #info-column {
+    display: flex;
+    flex-direction: column;
     margin-left: 10px;
-    flex: 1;
     height: 100%;
+}
+
+#info-schools-list {
+    flex: 1 1 auto;
+    flex-direction: column;
+    margin-top: 10px;
+    margin-bottom: 6px;
+    overflow: auto;
+    font: 28px sans-serif;
+    color: grey;
+}
+
+#info-schools-sumstats {
+    display: inline-block;
+}
+
+#info-schools-plot {
+    margin-top: 10px;
+    margin-bottom: 50px;
 }
 
 #info-column h1 {
@@ -26,15 +46,31 @@ body {
     margin-top: 10px;
 }
 
+#info-column h2 {
+    margin-top: 4px;
+    margin-bottom: 4px;
+    font: 24px sans-serif;
+    color: #737373;
+}
+
+#info-column p {
+    margin-top: 4px;
+    margin-bottom: 4px;
+    margin-left: 10px;
+    font: 24px sans-serif;
+    font-weight: bold;
+    color: #737373;
+}
+
 #info-column hr {
+    margin-left: 0;
+    margin-right: 0;
     height: 1px;
     background-color: #a0a0a0
 }
 
 #info-column ul {
     display: block;
-    overflow: auto;
-    max-height: 60vh;
     list-style: none;
     list-style-position: outside;
     padding-left: 0;
@@ -48,6 +84,10 @@ body {
     border-radius: 10px;
     text-indent: -2.8em;
     padding-left: 2.5em;
+}
+
+#info-column li:first-child {
+    margin-top: -18px;
 }
 
 #info-column li:before {
@@ -73,17 +113,25 @@ body {
     color: #737373;
 }
 
-#info-schools-list {
-    margin-top: 50px;
-}
-
 #info-schools-subsets button {
     margin-top: 8px;
+    margin-bottom: 8px;
     padding: 6px 10px 6px 10px;
     border: 2px solid #737373;
     font: 18px sans-serif;
     color: #737373;
 }
+
+#info-intro-tip {
+    font: 24px sans-serif;
+    color: #737373;
+}
+
+#info-schools-plot > svg {
+    width: 100%;
+    height: 40px;
+}
+
 
 #medClearAll:hover {
     background-color: lightgray;
@@ -94,12 +142,25 @@ body {
 }
 
 .school:hover {
-    background-color: lightgrey;
+    background-color: lightgrey; 
+}
+
+.colorLegend {
+    font: 16px sans-serif;
+    fill: #252525;
+}
+
+.info-sumstat {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: row;
+    margin-right: 20px;
+    float: left;
 }
 
 div.tooltip {
-    margin-top: 20px;
-    margin-left: 20px;
+    margin-top: 10px;
+    margin-left: 50px;
     height: auto;					
     font: 24px sans-serif;		
     color: #737373;

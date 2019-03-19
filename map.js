@@ -11,8 +11,22 @@ Promise.all(files.map(url => fetch(url)
     .then(data => mainMap(data))
     .catch(function(error) {
         console.log(error);
+        d3.text("error.txt").then(function(text) {
+            console.log(text);
+            document.getElementById("info-schools-list").innerHTML =
+            "There was an error loading the map, please check the console";
+        });
     });
 
+
+// Setting up all main global elements
+const mainDiv = document.getElementById("map-column");
+const propPlotWidth = document.getElementById('info-schools-sumstats').clientWidth
+
+// Setting up margins, width, and height
+const margin = {top: 20, left: 20, right: 0, bottom: 20};
+const width = mainDiv.clientWidth - margin.left - margin.right;
+const height = mainDiv.clientHeight - margin.top - margin.bottom;
 
 // Initialize a set to hold all selected medical schools
 var medSchoolSet = new Set();
@@ -21,15 +35,8 @@ var medSchoolSet = new Set();
 var mainMap = function(data) {
     const [stateShapes, schoolsInfo, schoolsData] = data;
 
-    // Setting up all main global elements
-    const mainDiv = document.getElementById("map-column");
-
-    // Setting up margins, width, and height
-    const margin = {top: 20, left: 20, right: 0, bottom: 0};
-    const width = mainDiv.clientWidth - margin.left - margin.right;
-    const height = mainDiv.clientHeight - margin.top - margin.bottom;
-
     // Sequential color scales for contours
+    const domainThresholds = [0,1,2,3,4,5,6,7,8,9]
     var amaColors = [
         '#2a044a','#31325d',
         '#44546f','#5b7781',
@@ -39,14 +46,13 @@ var mainMap = function(data) {
     ]
 
     var contourColor = d3.scaleLinear()
-        .domain([0,1,2,3,4,5,6,7,8,9])
-        .interpolate(d3.interpolateRgb)
+        .domain(domainThresholds)
         .range(amaColors)
 
     // Setting the projection and path for drawing states
     // and contours
-    var projection = d3.geoAlbersUsa()
-        .fitWidth(width - margin.left, stateShapes);
+    var projection = d3.geoAlbers()
+        .fitSize([width, height], stateShapes);
 
     var path = d3.geoPath(projection);
 
@@ -73,6 +79,11 @@ var mainMap = function(data) {
 
         return {
             med_school_name: d.med_school_name,
+            med_est: d.med_est,
+            med_degree: d.med_degree,
+            med_n_primary: d.med_n_primary,
+            med_n_specialty: d.med_n_specialty,
+            med_mcat_score: d.med_mcat_score,
             lon: locs[0],
             lat: locs[1]
         };
@@ -97,15 +108,31 @@ var mainMap = function(data) {
     // Creating an svg and appending a map + school locations
     var svg = d3.select('#map-container')
         .attr('width', width)
-        .attr('height', height)
+        .attr('height', height + margin.top)
         .append('g')
-        .attr('transform', `translate(${margin.left}, ${margin.top})`);
+        .attr('transform', `translate(0, ${margin.top})`);
+
+    // Svg for containing mini proportion plot
+    var svgPropPlot = d3.select("#info-schools-plot")
+        .append('svg');
+
+    svgPropPlot.append("rect")
+        .attr("width", propPlotWidth + "px")
+        .attr("height", "40px")
+        .attr("fill", "#31325d");
+
+    svgPropPlot.append("rect")
+        .attr("class", "info-schools-plot")
+        .attr("width", propPlotWidth + "px")
+        .attr("height", "40px")
+        .attr("fill", "#31325d");
 
     // Creating a temporary div to put the school name into
     var div = d3.select("#map-tooltip")
         .append("div")
         .attr("class", "tooltip")
-        .style("opacity", 1);
+        .style("opacity", 1)
+        .style("line-height", 1.5);
 
     // Appending the states as static background
     svg.selectAll('.state')
@@ -115,6 +142,27 @@ var mainMap = function(data) {
         .attr('stroke', 'black')
         .attr('fill', "lightgrey")
         .attr('d', path);
+
+    // Adding a color legend to the map
+    svg.append("g")
+        .attr("class", "colorLegend")
+        .attr("transform", `translate(
+            ${x.range()[1] / 3 * 1.7},
+            ${y.range()[1] / 3 * 2.7})`
+        );
+
+    var colorLegend = d3.legendColor()
+        .shapeWidth(x.range()[1] / 50)
+        .titleWidth(x.range()[1] / 4)
+        .shapePadding(0)
+        .cells(10)
+        .labels(["Low", Array(8).fill(""), "High"].flat())
+        .orient('horizontal')
+        .title("Graduate Practice Density")
+        .scale(contourColor);
+
+    svg.select(".colorLegend")
+        .call(colorLegend);
 
     // Append school options to search box datalist
     d3.select('#medDataList')
@@ -130,6 +178,7 @@ var mainMap = function(data) {
         const highlight_point = schoolsInfoTrans[delaunay.find(mx, my)];
 
         div.html(highlight_point.med_school_name);
+
         svg.selectAll(".circle-highlight")
             .attr("class", "circle-highlight")
             .attr("cx", highlight_point.lon)
@@ -158,14 +207,26 @@ var mainMap = function(data) {
     // as an input, adds to set of schools until cleared
     var drawContours = function(set) {
 
+        d3.select("#info-intro-tip").remove();
+
         // Return only the students from selected med schools
-        schoolsFiltered = schoolsDataTrans
+        schoolsDataFiltered = schoolsDataTrans
             .filter(function(x) { return set.has(x.med_school_name) })
             .map(function(d) {
                 return {
                     lon: d.lon,
                     lat: d.lat,
                     weight: d.n_docs
+                }
+            });
+
+        schoolsInfoFiltered = schoolsInfoTrans
+            .filter(function(x) { return set.has(x.med_school_name) })
+            .map(function(d) {
+                return {
+                    med_n_primary: d.med_n_primary,
+                    med_n_specialty: d.med_n_specialty,
+                    med_mcat_score: d.med_mcat_score
                 }
             });
 
@@ -176,7 +237,7 @@ var mainMap = function(data) {
             .weight(function(d) { return d.weight; })
             .size([width, height])
             .bandwidth(4)
-            (schoolsFiltered);
+            (schoolsDataFiltered);
 
         // Join the contours to the SVG
         svg.selectAll(".contour")
@@ -187,8 +248,13 @@ var mainMap = function(data) {
             .style("cursor", "pointer")
             .attr("d", d3.geoPath());
 
-        svg.selectAll("overlay").remove();
+        // Draw an arbitrary highlight circle to move to nearest school
+        svg.append('circle')
+            .attr('class', 'circle-highlight')
+            .attr('r', 6)
+            .style('fill', 'none');
 
+        // Draw a background overlay for point tracking
         svg.append("rect")
             .attr("class", "overlay")
             .attr("width", width)
@@ -198,38 +264,57 @@ var mainMap = function(data) {
             .style("cursor", "pointer")
             .on("mousemove", mouseMoveHandler)
             .on("click", mouseClickHandler);
-    };
 
+        d3.select("#info-schools-sumstats-mcat p")
+            .join("text")
+            .html(Math.round(schoolsInfoFiltered
+                .map(function(d) { return d.med_mcat_score; })
+                .filter(Boolean)
+                .reduce((a, b) => a + b, 0) /
+                schoolsInfoFiltered
+                    .map(function(d) { return d.med_mcat_score; })
+                    .filter(Boolean).length
+                ) || 0);
+
+        var n_spec = Math.round(schoolsInfoFiltered
+            .map(function(d) { return d.med_n_specialty; })
+            .reduce((a, b) => a + b, 0));
+
+        var n_prim = Math.round(schoolsInfoFiltered
+            .map(function(d) { return d.med_n_primary; })
+            .reduce((a, b) => a + b, 0));
+
+        d3.select("#info-schools-sumstats-docs p")
+            .join("text")
+            .html(+n_spec + +n_prim);
+
+        var svgPropPlotX = d3.scaleLinear()
+            .domain([0, +n_spec + +n_prim])
+            .range([0, propPlotWidth]);
+
+        svgPropPlot.selectAll(".info-schools-plot")
+            .data([+n_prim])
+            .join("rect")
+            .transition()
+            .duration(300)
+            .attr("width", function(d) { return svgPropPlotX(d) + "px"; })
+            .attr("height", "40px")
+            .style("fill", "#fd717a");
+
+    };
 
     // Draw all schools on the map
     svg.selectAll("circle")
         .data(schoolsInfoTrans)
         .join("circle")
-        .attr("cx", function(d) { return x(d.lon); })
-        .attr("cy", function(d) { return y(d.lat); })
+        .attr("cx", function(d) { return d.lon; })
+        .attr("cy", function(d) { return d.lat; })
         .attr("r", 4)
         .attr("fill", "#6386b7")
-
-    // Draw an arbitrary highlight circle to move to nearest school
-    svg.append('circle')
-        .attr('class', 'circle-highlight')
-        .attr('r', 6)
-        .style('fill', 'none');
 
     // Delaunay function for creating voronoi selection
     var delaunay = d3.Delaunay
         .from(schoolsInfoTrans.map(function(d) { return [d.lon, d.lat] }))
-
-    // Draw a rectangle overlay to detect mouse movement
-    svg.append("rect")
-        .attr("class", "overlay")
-        .attr("width", width)
-        .attr("height", height)
-        .style("fill", "black")
-        .style("opacity", 0)
-        .style("cursor", "pointer")
-        .on("mousemove", mouseMoveHandler)
-        .on("click", mouseClickHandler);
 
     // Create a searchbar in the information div
     d3.select("#medSearchForm").on("submit", function() {
@@ -287,6 +372,7 @@ var mainMap = function(data) {
     d3.select("#medSetMostUrban")
         .style("cursor", "pointer")
         .on("click", function() {
+            medSchoolSet.clear();
         [   "University of California, Irvine School of Medicine",
             "State University of New York Upstate Medical University",
             "Albert Einstein College of Medicine",
@@ -302,6 +388,7 @@ var mainMap = function(data) {
     d3.select("#medSetMostRural")
         .style("cursor", "pointer")
         .on("click", function() {
+            medSchoolSet.clear();
         [   "University of Mississippi School of Medicine",
             "University of Arkansas for Medical Sciences/UAMS College of Medicine",
             "West Virginia University School of Medicine",
@@ -317,16 +404,16 @@ var mainMap = function(data) {
     d3.select("#medSetTop10")
         .style("cursor", "pointer")
         .on("click", function() {
+            medSchoolSet.clear();
         [   "Harvard Medical School",
             "Johns Hopkins University School of Medicine",
-            "New York University School of Medicine",
             "Stanford University School of Medicine",
-            "UCSF School of Medicine",
-            "Mayo Clinic College of Medicine",
             "Perelman School of Medicine at the University of Pennsylvania",
+            "UCSF School of Medicine",
+            "Columbia University Roy and Diana Vagelos College of Physicians and Surgeons",
             "David Geffen School of Medicine at UCLA",
             "Washington University School of Medicine",
-            "Duke University School of Medicine"
+            "Weill Cornell Medical College"
         ].forEach(function(d) {
             medSchoolSet.add(d)
             drawContours(medSchoolSet);
@@ -334,14 +421,13 @@ var mainMap = function(data) {
         });
     });
 
+    // Initialize contours and highlight circle with empty set
+    drawContours(medSchoolSet);
+    d3.select("#info-schools-list")
+        .append("text")
+        .attr("id", "info-intro-tip")
+        .text("Click on a medical school to see" +
+            " where its graduates end up practicing.")
 
 };
 
-
-// Suggestions from Alex
-// - Lasso brush selection
-// - Add note cueing to lasso
-
-// TODO
-// transitions?
-// fix Hawaii
