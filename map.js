@@ -7,7 +7,8 @@ var files = [
     "data/state_boundaries_albers.json",
     "data/schools_info.json",
     "data/schools_data.json",
-    "data/schools_presets.json"
+    "data/schools_presets.json",
+    "data/lasso_data.json"
 ]
 
 // Loading files via promises
@@ -42,10 +43,10 @@ var medSchoolSet = new Set();
 
 // Main map drawing function
 var mainMap = function(data) {
-    const [stateShapes, schoolsInfo, schoolsData, schoolsPresets] = data;
+    const [stateShapes, schoolsInfo, schoolsData, schoolsPresets, lassoData] = data;
 
     // Sequential color scales for contours
-    const domainThresholds = [0,1,2,3,4,5,6,7,8,9]
+    const domainThresholds = [0,2,4,6,8,10,12,14,16,18]
     var amaColors = [
         '#2a044a','#31325d',
         '#44546f','#5b7781',
@@ -117,7 +118,7 @@ var mainMap = function(data) {
         }
     });
 
-    var medSchoolNames = schoolsDataTrans.map(d => d.med_school_name)
+    var medSchoolNames = schoolsInfoTrans.map(d => d.med_school_name)
 
 
     ///////////////////////////////////////////////////////
@@ -133,7 +134,8 @@ var mainMap = function(data) {
 
     // Svg for containing mini proportion plot
     var propPlot = d3.select("#info-schools-plot")
-        .append('svg');
+        .append('svg')
+        .append("g");
 
     propPlot.append("rect")
         .attr("width", propPlotWidth + "px")
@@ -145,7 +147,6 @@ var mainMap = function(data) {
         .attr("width", propPlotWidth + "px")
         .attr("height", "40px")
         .attr("fill", "#31325d");
-
 
     // Creating a temporary div to put the school name into
     var div = d3.select("#map-tooltip")
@@ -192,7 +193,7 @@ var mainMap = function(data) {
         .attr('value', function(d) { return d.med_school_name; });
 
     // Draw all schools on the map
-    svg.selectAll("circle")
+    var schoolCircles = svg.selectAll("circle")
         .data(schoolsInfoTrans)
         .join("circle")
         .attr("cx", function(d) { return d.lon; })
@@ -277,7 +278,6 @@ var mainMap = function(data) {
                 drawContours(medSchoolSet);
                 medListHandler(medSchoolSet);
             });
-
     };
 
 
@@ -306,8 +306,13 @@ var mainMap = function(data) {
     // as an input, adds to set of schools until cleared
     var drawContours = function(set) {
 
-        // Remove introductory tip
+        // Remove introductory tips
         d3.select("#info-intro-tip").remove();
+        d3.selectAll(".lasso-helper")
+            .transition()
+            .duration(500)
+            .attr("opacity", 0)
+            .remove();
 
         // Return only the students and information from selected med schools
         schoolsDataFiltered = schoolsDataTrans
@@ -346,7 +351,7 @@ var mainMap = function(data) {
             .attr('class', 'contour')
             .style("cursor", "pointer")
             .attr("d", d3.geoPath())
-            .attr("fill", function(d) { return contourColor(d.value); });
+            .attr("fill", function(d) { return contourColor(d.value); })
 
         // Draw an arbitrary highlight circle to move to nearest school
         svg.append('circle')
@@ -407,6 +412,22 @@ var mainMap = function(data) {
             .attr("height", "40px")
             .style("fill", "#fd717a");
 
+        // Append number of primary care physicians to bar
+        propPlot.selectAll(".info-plotstat")
+            .data([+n_spec])
+            .join("text")
+            .attr("text-anchor", "end")
+            .attr("x", propPlotWidth - 20 + "px")
+            .attr("y", "30px")
+            .attr("class", "info-plotstat")
+            .text(function(d) { return d; });
+
+        // Append number of primary care physicians to bar
+        propPlot.append("text")
+            .attr("x", "20px")
+            .attr("y", "30px")
+            .attr("class", "info-plotstat")
+            .text(+n_prim);
     };
 
 
@@ -433,14 +454,121 @@ var mainMap = function(data) {
             });
         });
 
+    // Load all schools
+    d3.select("#info-schools-subsets")
+        .append("input")
+        .attr("type", "button")
+        .attr("class", "medPresetButton")
+        .attr("value", "All")
+        .style("cursor", "pointer")
+        .on("click", function() {
+            medSchoolSet.clear();
+            medSchoolNames.forEach(function(d) {
+                medSchoolSet.add(d)
+                drawContours(medSchoolSet);
+                medListHandler(medSchoolSet);
+            });
+        });
+
+
+    ///////////////////////////////////////////////////////
+    /////////  LASSO SELECTION HANDLING           /////////
+    ///////////////////////////////////////////////////////
+
+    var lassoHelperInitializer = function () {
+
+    var lassoDataTrans = lassoData.coordinates.map(function(d) {
+        return projection([d[0], d[1]])
+    });
+
+    var lassoLine = d3.line()
+        .x(function(d) {return x(d[0]);})
+        .y(function(d) {return y(d[1]);})
+        .curve(d3.curveCardinal.tension(0));
+
+    var lassoPath = svg.append("path")
+        .attr("d", lassoLine(lassoDataTrans))
+        .attr("class", "lasso-helper")
+        .attr("stroke", "#252525")
+        .attr("stroke-width", "2")
+        .attr("fill", "none");
+
+    var lassoLength = lassoPath.node().getTotalLength();
+    var lassoHelperRepeater = function() {
+        lassoPath
+            .attr("stroke-dasharray", lassoLength + " " + lassoLength)
+            .attr("stroke-dashoffset", lassoLength)
+            .attr("opacity", 1)
+            .transition()
+                .duration(2000)
+                .attr("stroke-dashoffset", 0)
+            .transition()
+                .delay(500)
+                .duration(500)
+                .attr("opacity", 0)
+                .on("end", lassoHelperRepeater);
+        };
+
+        lassoHelperRepeater();
+    };
+
+    // Main lasso functions, taken directly from bl.ocks
+    // https://bl.ocks.org/skokenes/a85800be6d89c76c1ca98493ae777572
+    var lasso_start = function() {
+        lasso.items()
+            .classed("not_possible", true)
+            .classed("selected", false);
+    };
+
+    var lasso_draw = function() {
+        lasso.possibleItems()
+            .classed("not_possible", false)
+            .classed("possible", true);
+
+        lasso.notPossibleItems()
+            .classed("not_possible", true)
+            .classed("possible", false);
+    };
+
+    var lasso_end = function() {
+        lasso.items()
+            .classed("not_possible", false)
+            .classed("possible", false);
+
+        lasso.selectedItems().data().map( function(d) {
+            medValueChecker(d.med_school_name);
+        });
+    };
+
+    var lasso = d3.lasso()
+        .closePathSelect(true)
+        .closePathDistance(100)
+        .items(schoolCircles)
+        .targetArea(svg)
+        .on("start",lasso_start)
+        .on("draw",lasso_draw)
+        .on("end",lasso_end);
+
+    svg.call(lasso);
+
+
+    ///////////////////////////////////////////////////////
+    /////////  INITIALIZING FIRST TIME STUFF      /////////
+    ///////////////////////////////////////////////////////
+
     // Initialize contours and highlight circle with empty set
     // Draw intro tip in the list area
     drawContours(medSchoolSet);
+    lassoHelperInitializer();
     d3.select("#info-schools-list")
         .append("text")
         .attr("id", "info-intro-tip")
-        .text("Click on a medical school to see" +
-            " where its graduates end up practicing.")
+        .html("Click on or lasso some medical schools to see" +
+            " where their graduates end up practicing." + "<br><br>" +
+            " Urban medical school graduates are more likely to be" +
+            " specialists and live on the coasts, while graduates" +
+            " from rural schools are more likely to spread to" +
+            " surrounding areas.")
 
 };
 

@@ -17,7 +17,9 @@ body {
     display: flex;
     flex-direction: column;
     margin-left: 10px;
+    margin-right: 10px;
     height: 100%;
+    min-width: 300px;
 }
 
 #info-schools-list {
@@ -52,14 +54,21 @@ body {
 }
 
 #info-column h2 {
-    margin-top: 4px;
+    margin-top: 8px;
     margin-bottom: 4px;
     font: 24px sans-serif;
     color: #737373;
 }
 
-#info-column p {
+#info-column h3 {
     margin-top: 4px;
+    margin-bottom: 8px;
+    font: 20px sans-serif;
+    color: #737373;
+}
+
+#info-column p {
+    margin-top: 8px;
     margin-bottom: 4px;
     margin-left: 10px;
     font: 24px sans-serif;
@@ -154,6 +163,43 @@ body {
     flex-direction: row;
     margin-right: 20px;
     float: left;
+}
+
+.info-plotstat {
+    font: 30px sans-serif;
+    fill: white;
+}
+
+.lasso path {
+    stroke: #252525;
+    stroke-width: 2px;
+}
+
+.lasso .drawn {
+    fill-opacity: .05;
+}
+
+.lasso .loop_close {
+    fill: none;
+    stroke-dasharray: 4,4;
+}
+
+.lasso .origin {
+    fill: #3399FF;
+    fill-opacity: .5;
+}
+
+.not_possible {
+    fill: #6386b7;
+}
+
+.possible {
+    r: 6px;
+    fill: red;
+}
+
+.selected {
+    fill: #6386b7;
 }
 
 div.tooltip {
