@@ -1,8 +1,13 @@
+///////////////////////////////////////////////////////
+/////////  LOADING DATA                       /////////
+///////////////////////////////////////////////////////
+
 // List of all the needed files
 var files = [
     "data/state_boundaries_albers.json",
     "data/schools_info.json",
-    "data/schools_data.json"
+    "data/schools_data.json",
+    "data/schools_presets.json"
 ]
 
 // Loading files via promises
@@ -19,6 +24,10 @@ Promise.all(files.map(url => fetch(url)
     });
 
 
+///////////////////////////////////////////////////////
+/////////  SETTING UP GLOBALS                 /////////
+///////////////////////////////////////////////////////
+
 // Setting up all main global elements
 const mainDiv = document.getElementById("map-column");
 const propPlotWidth = document.getElementById('info-schools-sumstats').clientWidth
@@ -33,7 +42,7 @@ var medSchoolSet = new Set();
 
 // Main map drawing function
 var mainMap = function(data) {
-    const [stateShapes, schoolsInfo, schoolsData] = data;
+    const [stateShapes, schoolsInfo, schoolsData, schoolsPresets] = data;
 
     // Sequential color scales for contours
     const domainThresholds = [0,1,2,3,4,5,6,7,8,9]
@@ -71,6 +80,11 @@ var mainMap = function(data) {
         .domain([bbox.ymin, bbox.ymax])
         .range([bbox.ymin, bbox.ymax]);
 
+
+    ///////////////////////////////////////////////////////
+    /////////  REPROJECTING GEODATA               /////////
+    ///////////////////////////////////////////////////////
+
     // Reprojecting lat/lon school locations into albers
     var schoolsInfoTrans = schoolsInfo.map(function(d) {
         var locs = projection([d.med_lon, d.med_lat])
@@ -105,6 +119,11 @@ var mainMap = function(data) {
 
     var medSchoolNames = schoolsDataTrans.map(d => d.med_school_name)
 
+
+    ///////////////////////////////////////////////////////
+    /////////  CREATING STATIC PLOT ELEMENTS      /////////
+    ///////////////////////////////////////////////////////
+
     // Creating an svg and appending a map + school locations
     var svg = d3.select('#map-container')
         .attr('width', width)
@@ -113,19 +132,20 @@ var mainMap = function(data) {
         .attr('transform', `translate(0, ${margin.top})`);
 
     // Svg for containing mini proportion plot
-    var svgPropPlot = d3.select("#info-schools-plot")
+    var propPlot = d3.select("#info-schools-plot")
         .append('svg');
 
-    svgPropPlot.append("rect")
+    propPlot.append("rect")
         .attr("width", propPlotWidth + "px")
         .attr("height", "40px")
         .attr("fill", "#31325d");
 
-    svgPropPlot.append("rect")
+    propPlot.append("rect")
         .attr("class", "info-schools-plot")
         .attr("width", propPlotWidth + "px")
         .attr("height", "40px")
         .attr("fill", "#31325d");
+
 
     // Creating a temporary div to put the school name into
     var div = d3.select("#map-tooltip")
@@ -143,7 +163,7 @@ var mainMap = function(data) {
         .attr('fill', "lightgrey")
         .attr('d', path);
 
-    // Adding a color legend to the map
+    // Adding a color legend to the map svg
     svg.append("g")
         .attr("class", "colorLegend")
         .attr("transform", `translate(
@@ -171,8 +191,40 @@ var mainMap = function(data) {
         .join('option')
         .attr('value', function(d) { return d.med_school_name; });
 
+    // Draw all schools on the map
+    svg.selectAll("circle")
+        .data(schoolsInfoTrans)
+        .join("circle")
+        .attr("cx", function(d) { return d.lon; })
+        .attr("cy", function(d) { return d.lat; })
+        .attr("r", 4)
+        .attr("fill", "#6386b7")
 
-    // Function that finds and highlights nearest point
+    // Delaunay function for creating voronoi selection
+    var delaunay = d3.Delaunay
+        .from(schoolsInfoTrans.map(function(d) { return [d.lon, d.lat] }))
+
+    // Create a searchbar in the information div
+    d3.select("#medSearchForm").on("submit", function() {
+        medSearchHandler();
+        document.getElementById('medSearchForm').reset()
+    });
+
+    // Setting actions for the clear all button
+    d3.select("#medClearAll")
+        .style("cursor", "pointer")
+        .on("click", function() {
+            medSchoolSet.clear();
+            drawContours(medSchoolSet);
+            medListHandler(medSchoolSet);
+        });
+
+
+    ///////////////////////////////////////////////////////
+    /////////  CREATING HANDLER FUNCTIONS         /////////
+    ///////////////////////////////////////////////////////
+
+    // Function that finds and highlights nearest point to cursor
     var mouseMoveHandler = function() {
         const [mx, my] = d3.mouse(this);
         const highlight_point = schoolsInfoTrans[delaunay.find(mx, my)];
@@ -203,13 +255,61 @@ var mainMap = function(data) {
     };
 
 
+    // Creating a handler for the search box
+    var medSearchHandler = function() {
+        let searchValue = document.getElementById("medSearchInput").value
+        medValueChecker(searchValue);
+    };
+
+
+    // Updates the list of shown med school under the searchbar
+    var medListHandler = function(set) {
+        listValues = Array.from(set);
+        d3.select("#info-schools-list").select("ul").append("li");
+        d3.select("#info-schools-list").selectAll("li")
+            .data(listValues)
+            .join('text')
+            .attr("class", "school")
+            .text(function(d) { return d; })
+            .style("cursor", "pointer")
+            .on("click", function(d) {
+                medSchoolSet.delete(d);
+                drawContours(medSchoolSet);
+                medListHandler(medSchoolSet);
+            });
+
+    };
+
+
+    // Checks if a school value is within the allowable set
+    var medValueChecker = function(school) {
+        // If value is in schools set delete, if not, append to set
+        if (medSchoolSet.has(school)) {
+            medSchoolSet.delete(school);
+            drawContours(medSchoolSet);
+            medListHandler(medSchoolSet);
+        } else {
+            if (medSchoolNames.includes(school)) {
+                medSchoolSet.add(school);
+                drawContours(medSchoolSet);
+                medListHandler(medSchoolSet);
+            };
+        };
+    };
+
+
+    ///////////////////////////////////////////////////////
+    /////////  MAIN CONTOUR DRAWING FUNCTION      /////////
+    ///////////////////////////////////////////////////////
+
     // Function which draws contours based on a medical school id
     // as an input, adds to set of schools until cleared
     var drawContours = function(set) {
 
+        // Remove introductory tip
         d3.select("#info-intro-tip").remove();
 
-        // Return only the students from selected med schools
+        // Return only the students and information from selected med schools
         schoolsDataFiltered = schoolsDataTrans
             .filter(function(x) { return set.has(x.med_school_name) })
             .map(function(d) {
@@ -244,9 +344,9 @@ var mainMap = function(data) {
             .data(contours)
             .join("path")
             .attr('class', 'contour')
-            .attr("fill", function(d) { return contourColor(d.value); })
             .style("cursor", "pointer")
-            .attr("d", d3.geoPath());
+            .attr("d", d3.geoPath())
+            .attr("fill", function(d) { return contourColor(d.value); });
 
         // Draw an arbitrary highlight circle to move to nearest school
         svg.append('circle')
@@ -265,6 +365,7 @@ var mainMap = function(data) {
             .on("mousemove", mouseMoveHandler)
             .on("click", mouseClickHandler);
 
+        // Calculate the average MCAT of selected schools
         d3.select("#info-schools-sumstats-mcat p")
             .join("text")
             .html(Math.round(schoolsInfoFiltered
@@ -276,152 +377,64 @@ var mainMap = function(data) {
                     .filter(Boolean).length
                 ) || 0);
 
+        // Get the total number of primary care physicians
         var n_spec = Math.round(schoolsInfoFiltered
             .map(function(d) { return d.med_n_specialty; })
             .reduce((a, b) => a + b, 0));
 
+        // Get the total number of specialists
         var n_prim = Math.round(schoolsInfoFiltered
             .map(function(d) { return d.med_n_primary; })
             .reduce((a, b) => a + b, 0));
 
+        // Join the total number of docs to the summary stats page
         d3.select("#info-schools-sumstats-docs p")
             .join("text")
             .html(+n_spec + +n_prim);
 
-        var svgPropPlotX = d3.scaleLinear()
+        // Create X scale for proportion plot
+        var propPlotScaleX = d3.scaleLinear()
             .domain([0, +n_spec + +n_prim])
             .range([0, propPlotWidth]);
 
-        svgPropPlot.selectAll(".info-schools-plot")
+        // Append scaled rects to plot to represent proportion of primary care
+        propPlot.selectAll(".info-schools-plot")
             .data([+n_prim])
             .join("rect")
             .transition()
             .duration(300)
-            .attr("width", function(d) { return svgPropPlotX(d) + "px"; })
+            .attr("width", function(d) { return propPlotScaleX(d) + "px"; })
             .attr("height", "40px")
             .style("fill", "#fd717a");
 
     };
 
-    // Draw all schools on the map
-    svg.selectAll("circle")
-        .data(schoolsInfoTrans)
-        .join("circle")
-        .attr("cx", function(d) { return d.lon; })
-        .attr("cy", function(d) { return d.lat; })
-        .attr("r", 4)
-        .attr("fill", "#6386b7")
 
-    // Delaunay function for creating voronoi selection
-    var delaunay = d3.Delaunay
-        .from(schoolsInfoTrans.map(function(d) { return [d.lon, d.lat] }))
+    ///////////////////////////////////////////////////////
+    /////////  DEFINING PRESET SCHOOL SETS        /////////
+    ///////////////////////////////////////////////////////
 
-    // Create a searchbar in the information div
-    d3.select("#medSearchForm").on("submit", function() {
-        medSearchHandler();
-        document.getElementById('medSearchForm').reset()
-    });
-
-    d3.select("#medClearAll")
+    // Load all presets from data
+    d3.select("#info-schools-subsets")
+        .selectAll("input")
+        .data(schoolsPresets)
+        .enter()
+        .append("input")
+        .attr("type", "button")
+        .attr("class", "medPresetButton")
+        .attr("value", function(d) { return d.preset_name; })
         .style("cursor", "pointer")
-        .on("click", function() {
+        .on("click", function(x) {
             medSchoolSet.clear();
-            drawContours(medSchoolSet);
-            medListHandler(medSchoolSet);
-        });
-
-
-    // Creating a handler for the search box
-    var medSearchHandler = function() {
-        let searchValue = document.getElementById("medSearchInput").value
-        medValueChecker(searchValue);
-    };
-
-    var medListHandler = function(set) {
-        listValues = Array.from(set);
-        d3.select("#info-schools-list").select("ul").append("li");
-        d3.select("#info-schools-list").selectAll("li")
-            .data(listValues)
-            .join('text')
-            .attr("class", "school")
-            .text(function(d) { return d; })
-            .style("cursor", "pointer")
-            .on("click", function(d) {
-                medSchoolSet.delete(d);
+            x.schools.forEach(function(d) {
+                medSchoolSet.add(d)
                 drawContours(medSchoolSet);
                 medListHandler(medSchoolSet);
             });
-
-    };
-
-    var medValueChecker = function(school) {
-        // If value is in schools set delete, if not, append to set
-        if (medSchoolSet.has(school)) {
-            medSchoolSet.delete(school);
-            drawContours(medSchoolSet);
-            medListHandler(medSchoolSet);
-        } else {
-            if (medSchoolNames.includes(school)) {
-                medSchoolSet.add(school);
-                drawContours(medSchoolSet);
-                medListHandler(medSchoolSet);
-            };
-        };
-    };
-
-    d3.select("#medSetMostUrban")
-        .style("cursor", "pointer")
-        .on("click", function() {
-            medSchoolSet.clear();
-        [   "University of California, Irvine School of Medicine",
-            "State University of New York Upstate Medical University",
-            "Albert Einstein College of Medicine",
-            "New York University School of Medicine",
-            "Stony Brook University School of Medicine"
-        ].forEach(function(d) {
-            medSchoolSet.add(d)
-            drawContours(medSchoolSet);
-            medListHandler(medSchoolSet);
         });
-    });
-
-    d3.select("#medSetMostRural")
-        .style("cursor", "pointer")
-        .on("click", function() {
-            medSchoolSet.clear();
-        [   "University of Mississippi School of Medicine",
-            "University of Arkansas for Medical Sciences/UAMS College of Medicine",
-            "West Virginia University School of Medicine",
-            "Louisiana State University School of Medicine in Shreveport",
-            "University of Iowa Roy J. and Lucille A. Carver College of Medicine"
-        ].forEach(function(d) {
-            medSchoolSet.add(d)
-            drawContours(medSchoolSet);
-            medListHandler(medSchoolSet);
-        });
-    });
-
-    d3.select("#medSetTop10")
-        .style("cursor", "pointer")
-        .on("click", function() {
-            medSchoolSet.clear();
-        [   "Harvard Medical School",
-            "Johns Hopkins University School of Medicine",
-            "Stanford University School of Medicine",
-            "Perelman School of Medicine at the University of Pennsylvania",
-            "UCSF School of Medicine",
-            "Columbia University Roy and Diana Vagelos College of Physicians and Surgeons",
-            "David Geffen School of Medicine at UCLA",
-            "Washington University School of Medicine",
-            "Weill Cornell Medical College"
-        ].forEach(function(d) {
-            medSchoolSet.add(d)
-            drawContours(medSchoolSet);
-            medListHandler(medSchoolSet);
-        });
-    });
 
     // Initialize contours and highlight circle with empty set
+    // Draw intro tip in the list area
     drawContours(medSchoolSet);
     d3.select("#info-schools-list")
         .append("text")
