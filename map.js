@@ -207,8 +207,9 @@ var mainMap = function(data) {
 
     // Create a searchbar in the information div
     d3.select("#medSearchForm").on("submit", function() {
-        medSearchHandler();
-        document.getElementById('medSearchForm').reset()
+        let searchValue = document.getElementById("medSearchInput").value;
+        medValueChecker(searchValue);
+        document.getElementById('medSearchForm').reset();
     });
 
     // Setting actions for the clear all button
@@ -253,13 +254,6 @@ var mainMap = function(data) {
 
         medListHandler(medSchoolSet);
         drawContours(medSchoolSet);
-    };
-
-
-    // Creating a handler for the search box
-    var medSearchHandler = function() {
-        let searchValue = document.getElementById("medSearchInput").value
-        medValueChecker(searchValue);
     };
 
 
@@ -449,9 +443,9 @@ var mainMap = function(data) {
             medSchoolSet.clear();
             x.schools.forEach(function(d) {
                 medSchoolSet.add(d)
-                drawContours(medSchoolSet);
                 medListHandler(medSchoolSet);
             });
+            drawContours(medSchoolSet);
         });
 
     // Load all schools
@@ -465,9 +459,9 @@ var mainMap = function(data) {
             medSchoolSet.clear();
             medSchoolNames.forEach(function(d) {
                 medSchoolSet.add(d)
-                drawContours(medSchoolSet);
                 medListHandler(medSchoolSet);
             });
+            drawContours(medSchoolSet);
         });
 
 
