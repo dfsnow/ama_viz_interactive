@@ -562,7 +562,23 @@ var mainMap = function(data) {
             " Urban medical school graduates are more likely to be" +
             " specialists and live on the coasts, while graduates" +
             " from rural schools are more likely to spread to" +
-            " surrounding areas.")
+            " surrounding areas. Scroll down for credits... <br><br>" +
+            " This project uses aggregated data from the American Medical" +
+            " Association Master File. The data is available" +
+            " <a href='https://github.com/dfsnow/ama_viz_interactive/tree/master/data'>here</a>." +
+            " <br><br>The code for this project is available at my" +
+            " <a href='https://github.com/dfsnow/ama_viz_interactive'>GitHub</a>." +
+            " <br><br>Inspired by the following bl.ocks: " +
+            " <br><a href='https://bl.ocks.org/pbeshai/8008075f9ce771ee8be39e8c38907570'>D3 Lasso</a>" +
+            " <br><a href='http://bl.ocks.org/eesur/9910343'>Dynamic Text Fields</a>" +
+            " <br><a href='https://bl.ocks.org/Kcnarf/6d5ace3aa9cc1a313d72b810388d1003'>Voronoi Point Picker</a>"
+
+        )
+
+
+
+
+            //
 
 };
 
